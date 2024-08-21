@@ -19,8 +19,10 @@ Este sistema permite que os usuários reservem salas de reunião em um escritór
    ```
 
 2. Configure o banco de dados PostgreSQL:
-   - Crie um novo banco de dados
-   - Execute o script SQL fornecido em `create_tables.sql`
+   - O banco de dados é configurado em `application.properties` no backend
+   - Ao iniciar o backend pela primeira vez, as tabelas são criadas automaticamente
+   - Certifique-se de que o banco de dados esteja rodando antes de iniciar o backend
+   
 
 3. Configure o backend:
    - Navegue até a pasta do backend
