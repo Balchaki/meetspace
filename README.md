@@ -43,9 +43,5 @@ Este sistema permite que os usuários reservem salas de reunião em um escritór
 
 1. **Reserva de Salas**: Os usuários podem visualizar salas disponíveis e fazer reservas.
 2. **Verificação de Disponibilidade**: O sistema verifica automaticamente se uma sala está disponível antes de permitir a reserva.
-3. **Notificações por E-mail**: Os usuários recebem notificações por e-mail sobre suas reservas.
-4. **Painel de Administração**: Os administradores podem gerenciar reservas, salas e usuários.
+3. **Painel de Administração**: Os administradores podem gerenciar reservas, salas e usuários.
 
-## Suporte
-
-Para obter suporte, entre em contato com a equipe de TI através do e-mail suporte@empresa.com.
