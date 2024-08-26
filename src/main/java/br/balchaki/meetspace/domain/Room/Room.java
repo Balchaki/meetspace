@@ -22,4 +22,5 @@ public class Room {
     private Long roomId;
     private String name;
     private Integer capacity;
+    private Boolean enabled = true;
 }

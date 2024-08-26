@@ -5,6 +5,7 @@ import br.balchaki.meetspace.dto.UserResponseDTO;
 import br.balchaki.meetspace.service.UserService;
 import br.balchaki.meetspace.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -30,16 +31,11 @@ public class UserController {
 
     @GetMapping("/me")
     public ResponseEntity<?> getUserData(@RequestHeader("Authorization") String token) throws Exception {
-        try{
-            String jwt = token.substring(7);
-            if(userService.isTokenInvalid(jwt)){
-                return ResponseEntity.status(401).body("Invalid token");
-            }
-            String email = jwtUtil.extractUsername(jwt);
-            User user = userService.findByEmail(email);
-            return ResponseEntity.ok().body(new UserResponseDTO(user.getName(), user.getIsAdmin()));
-        } catch (Exception e) {
-            throw new Exception("Error getting user data", e);
+        User user = userService.findByToken(token);
+        if(user.getUserId() != null){
+            return ResponseEntity.ok().body(new UserResponseDTO(user.getName(), user.getEmail(),user.getIsAdmin()));
+        }else{
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("");
         }
     }
 }
