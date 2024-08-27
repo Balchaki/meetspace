@@ -2,10 +2,13 @@ package br.balchaki.meetspace.service;
 
 import br.balchaki.meetspace.domain.User.User;
 import br.balchaki.meetspace.domain.User.UserRepository;
+import br.balchaki.meetspace.dto.RegisterRequestDTO;
 import br.balchaki.meetspace.dto.SuccessMessageDTO;
 import br.balchaki.meetspace.dto.UserDTO;
+import br.balchaki.meetspace.exception.UserAlreadyExistsException;
 import br.balchaki.meetspace.security.JwtUtil;
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -56,9 +59,19 @@ public class UserService {
         return new SuccessMessageDTO(true, "Senha atualizada com sucesso");
     }
 
-    public User registerNewUser(User user) {
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepository.save(user);
+    public UserDetails registerNewUser(@Valid RegisterRequestDTO user) throws Exception {
+        User newUser = new User();
+        if(existsByEmail(user.getEmail())){
+            throw new UserAlreadyExistsException("Email já cadastrado");
+        }
+        newUser.setEmail(user.getEmail());
+        newUser.setName(user.getName());
+        newUser.setPassword(passwordEncoder.encode(user.getPassword()));
+        newUser = userRepository.save(newUser);
+        if(newUser.getUserId() != null){
+            return userDetailsService.loadUserByUsername(newUser.getEmail());
+        }
+        throw new Exception("Erro ao registrar usuário");
     }
 
 

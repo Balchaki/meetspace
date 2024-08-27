@@ -1,92 +1,66 @@
 package br.balchaki.meetspace.controllers;
 
-import br.balchaki.meetspace.domain.User.User;
 import br.balchaki.meetspace.dto.AuthenticationRequestDTO;
 import br.balchaki.meetspace.dto.AuthenticationResponseDTO;
 import br.balchaki.meetspace.dto.RegisterRequestDTO;
-import br.balchaki.meetspace.dto.RegisterResponseDTO;
+import br.balchaki.meetspace.dto.LoginResponseDTO;
+import br.balchaki.meetspace.exception.UserAlreadyExistsException;
 import br.balchaki.meetspace.security.JwtUtil;
 import br.balchaki.meetspace.service.UserService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
 @RequestMapping("/api/auth")
+@RequiredArgsConstructor
 public class AuthenticationController {
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
-
-    @Autowired
-    private UserDetailsService userDetailsService;
-
-    @Autowired
-    private UserService userService;
-
-    @Autowired
-    private JwtUtil jwtUtil;
+    private final AuthenticationManager authenticationManager;
+    private final UserService userService;
+    private final JwtUtil jwtUtil;
 
     @PostMapping("/login")
-    public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthenticationRequestDTO authenticationRequest) throws Exception {
-
+    public ResponseEntity<LoginResponseDTO> createAuthenticationToken(@Valid @RequestBody AuthenticationRequestDTO authenticationRequest) {
         try {
-            authenticationManager.authenticate(
+            Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(authenticationRequest.getEmail(), authenticationRequest.getPassword())
             );
-        } catch (Exception e) {
-            throw new Exception("Incorrect username or password", e);
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            String jwt = jwtUtil.generateToken(userDetails);
+            return ResponseEntity.ok(new LoginResponseDTO(true, "Authenticated  ", jwt));
+        } catch (BadCredentialsException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new LoginResponseDTO(false, "Usuário ou senha inválidos", null));
         }
-
-        final UserDetails userDetails = userDetailsService
-                .loadUserByUsername(authenticationRequest.getEmail());
-
-        final String jwt = jwtUtil.generateToken(userDetails);
-
-        return ResponseEntity.ok(new AuthenticationResponseDTO(jwt));
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody @Valid RegisterRequestDTO registerRequest) {
+    public ResponseEntity<LoginResponseDTO> registerUser(@Valid @RequestBody RegisterRequestDTO registerRequest) {
         try {
-            if (userService.existsByEmail(registerRequest.getEmail())) {
-                return ResponseEntity.badRequest().body(new RegisterResponseDTO(false, "Usuário já registrado", null));
-            }
-
-            User user = new User();
-            user.setName(registerRequest.getName());
-            user.setEmail(registerRequest.getEmail());
-            user.setPassword(registerRequest.getPassword());
-
-            User savedUser = userService.registerNewUser(user);
-
-            UserDetails userDetails = userDetailsService.loadUserByUsername(savedUser.getEmail());
-            String jwt = jwtUtil.generateToken(userDetails);
-
-            return ResponseEntity.ok(new RegisterResponseDTO(true, "Usuário registrado com sucesso", jwt));
+            String jwt = jwtUtil.generateToken(userService.registerNewUser(registerRequest));
+            return ResponseEntity.ok(new LoginResponseDTO(true, "Usuário cadastrado com sucesso!", jwt));
+        } catch (UserAlreadyExistsException e) {
+            return ResponseEntity.badRequest().body(new LoginResponseDTO(false, "Já existe uma conta vinculada a esse endereço de e-mail.", null));
         } catch (Exception e) {
-            System.err.println("Erro ao registrar usuário "+ e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new RegisterResponseDTO(false, "Erro ao registrar usuário", null));
+                    .body(new LoginResponseDTO(false, "Erro ao cadastrar usuário.", null));
         }
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(@RequestHeader("Authorization") String token) {
+    public ResponseEntity<String> logout(@RequestHeader("Authorization") String token) {
         if (token != null && token.startsWith("Bearer ")) {
             String jwtToken = token.substring(7);
             userService.invalidateToken(jwtToken);
-            return ResponseEntity.ok().body("Logout realizado com sucesso");
+            return ResponseEntity.ok("Logout successful");
         }
-        return ResponseEntity.badRequest().body("Token inválido");
+        return ResponseEntity.badRequest().body("Invalid token");
     }
 }

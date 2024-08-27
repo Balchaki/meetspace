@@ -15,33 +15,33 @@
         <div class="form-group">
           <label for="name" class="form-label">Nome</label>
           <input
-            id="name"
-            v-model="name"
-            type="text"
-            class="form-input"
-            placeholder="Seu nome"
-            required
+              id="name"
+              v-model="name"
+              type="text"
+              class="form-input"
+              placeholder="Seu nome"
+              required
           />
         </div>
         <div class="form-group">
           <label for="email" class="form-label">Email</label>
           <input
-            id="email"
-            v-model="email"
-            type="email"
-            class="form-input"
-            placeholder="mail@exemplo.com"
-            required
+              id="email"
+              v-model="email"
+              type="email"
+              class="form-input"
+              placeholder="mail@exemplo.com"
+              required
           />
         </div>
         <div class="form-group">
           <label for="password" class="form-label">Senha</label>
           <input
-            id="password"
-            v-model="password"
-            type="password"
-            class="form-input"
-            required
+              id="password"
+              v-model="password"
+              type="password"
+              class="form-input"
+              required
           />
         </div>
         <button type="submit" class="form-submit" :disabled="isLoading">

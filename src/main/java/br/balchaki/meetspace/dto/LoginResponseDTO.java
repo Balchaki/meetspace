@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class RegisterResponseDTO {
+public class LoginResponseDTO {
 
     private Boolean success;
     private String message;

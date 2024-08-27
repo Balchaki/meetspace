@@ -15,27 +15,27 @@
           <div>
             <label for="email" class="sr-only">Email</label>
             <input
-              id="email"
-              v-model="email"
-              name="email"
-              type="email"
-              autocomplete="email"
-              required
-              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-              placeholder="Email"
+                id="email"
+                v-model="email"
+                name="email"
+                type="email"
+                autocomplete="email"
+                required
+                class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                placeholder="Email"
             />
           </div>
           <div>
             <label for="password" class="sr-only">Senha</label>
             <input
-              id="password"
-              v-model="password"
-              name="password"
-              type="password"
-              autocomplete="current-password"
-              required
-              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-              placeholder="Senha"
+                id="password"
+                v-model="password"
+                name="password"
+                type="password"
+                autocomplete="current-password"
+                required
+                class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                placeholder="Senha"
             />
           </div>
         </div>
@@ -46,9 +46,9 @@
 
         <div>
           <button
-            type="submit"
-            :disabled="isLoading"
-            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              type="submit"
+              :disabled="isLoading"
+              class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span class="absolute left-0 inset-y-0 flex items-center pl-3">
               <!-- Lock icon -->
@@ -87,14 +87,18 @@ const handleLogin = async () => {
 
   try {
     const response = await login({ email: email.value, password: password.value })
-    if (response.data.jwt) {
-      localStorage.setItem('jwt_token', response.data.jwt)
-      router.push('/dashboard')
+    if (response.data) {
+      if(response.data.success) {
+        localStorage.setItem('jwt_token', response.data.jwt)
+        router.push('/dashboard')
+      }else{
+        errorMessage.value = response.data.message;
+      }
     }
   } catch (error) {
     console.error('Login failed:', error)
-    if (error.response && error.response.status === 403) {
-      errorMessage.value = 'Email ou senha incorretos. Por favor, tente novamente.'
+    if (error.response && error.response.status === 401) {
+      errorMessage.value = error.response.data.message;
     } else {
       errorMessage.value = 'Ocorreu um erro ao tentar fazer login. Por favor, tente novamente mais tarde.'
     }
