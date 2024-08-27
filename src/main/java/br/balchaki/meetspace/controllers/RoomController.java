@@ -8,6 +8,9 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -25,62 +28,82 @@ public class RoomController {
     }
 
     @PutMapping("/")
-    public ResponseEntity<?> updateRoom(@RequestHeader("Authorization") String token, @RequestBody @Valid RoomDTO dto){
-        if(userService.getIsAdmin(token)){
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> updateRoom(@RequestBody @Valid RoomDTO dto){
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() != "anonymousUser") {
+        if(userService.getIsAdmin(authentication.getAuthorities())){
             Boolean result = roomService.updateRoom(dto);
             return ResponseEntity.status((result ? HttpStatus.OK : HttpStatus.INTERNAL_SERVER_ERROR)).body(new SuccessResponseDTO(result));
         }
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("");
+        }
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
     }
 
     @PutMapping("/update-status")
-    public ResponseEntity<?> updateRoomStatus(@RequestHeader("Authorization") String token, @RequestBody @Valid RoomRequestDTO dto){
-        if (userService.getIsAdmin(token)) {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> updateRoomStatus(@RequestBody @Valid RoomRequestDTO dto){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() != "anonymousUser") {
+        if(userService.getIsAdmin(authentication.getAuthorities())){
             Boolean result = roomService.toggleStatus(dto.getRoomId());
             return ResponseEntity.status((result ? HttpStatus.OK : HttpStatus.INTERNAL_SERVER_ERROR)).body(new SuccessResponseDTO(result));
         }
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("");
+       }
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteRoom(@PathVariable Integer id, @RequestHeader("Authorization") String token){
-        if(userService.getIsAdmin(token)){
-            Boolean result = roomService.deleteRoom(id);
-            return ResponseEntity.status((result ? HttpStatus.OK : HttpStatus.INTERNAL_SERVER_ERROR)).body(new SuccessResponseDTO(result));
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> deleteRoom(@PathVariable Integer id){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() != "anonymousUser") {
+            if (userService.getIsAdmin(authentication.getAuthorities())) {
+                Boolean result = roomService.deleteRoom(id);
+                return ResponseEntity.status((result ? HttpStatus.OK : HttpStatus.INTERNAL_SERVER_ERROR)).body(new SuccessResponseDTO(result));
+            }
         }
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
     }
 
     @GetMapping("/all")
-    public ResponseEntity<?> getAllRooms(@RequestHeader("Authorization") String token) {
-        if (userService.getIsAdmin(token)) {
-            List<Room> rooms = roomService.getAllRooms();
-            return ResponseEntity.ok(new RoomListDTO(rooms));
-        } else if (userService.getIsUser(token)) {
-            List<Room> rooms = roomService.getAllEnabled();
-            return ResponseEntity.ok(new RoomListDTO(rooms));
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> getAllRooms() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() != "anonymousUser") {
+            if (userService.getIsAdmin(authentication.getAuthorities())) {
+                List<Room> rooms = roomService.getAllRooms();
+                return ResponseEntity.ok(new RoomListDTO(rooms));
+            } else if (userService.getIsUser(authentication.getAuthorities())) {
+                List<Room> rooms = roomService.getAllEnabled();
+                return ResponseEntity.ok(new RoomListDTO(rooms));
+            }
         }
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
     }
 
 
 
 
     @PostMapping("/create")
-    public ResponseEntity<?> createRoom(@RequestHeader("Authorization") String token, @RequestBody RegisterRoomRequestDTO roomDTO) throws Exception {
-        if (userService.getIsAdmin(token)) {
-            Room room = new Room();
-            room.setName(roomDTO.getName());
-            room.setEnabled(true);
-            room.setCapacity(roomDTO.getCapacity());
-            Boolean success = roomService.createRoom(room);
-            if(success){
-                return ResponseEntity.ok().body(new SuccessResponseDTO(success));
-            }else {
-                return ResponseEntity.status(500).body(new SuccessResponseDTO(success));
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> createRoom(@RequestBody RegisterRoomRequestDTO roomDTO) throws Exception {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() && authentication.getPrincipal() != "anonymousUser") {
+            if (userService.getIsAdmin(authentication.getAuthorities())) {
+                Room room = new Room();
+                room.setName(roomDTO.getName());
+                room.setEnabled(true);
+                room.setCapacity(roomDTO.getCapacity());
+                Boolean success = roomService.createRoom(room);
+                if (success) {
+                    return ResponseEntity.ok().body(new SuccessResponseDTO(success));
+                } else {
+                    return ResponseEntity.status(500).body(new SuccessResponseDTO(success));
+                }
             }
-        }else{
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("");
         }
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("");
     }
 }

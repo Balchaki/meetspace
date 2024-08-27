@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.AllArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Table(name = "en_reservation")
 @Entity(name = "Reserve")
 @EqualsAndHashCode(of = "reserveId")
@@ -18,12 +20,21 @@ import lombok.AllArgsConstructor;
 public class Reserve {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @JsonProperty("reserveId") @Column(name = "seq_reservation")
+    @JsonProperty("reserveId")
+    @Column(name = "seq_reservation")
     private Long reserveId;
-    @JsonProperty("userId") @Column(name = "seq_user")
+
+    @JsonProperty("userId")
+    @Column(name = "seq_user")
     private Long userId;
-    @JsonProperty("roomId") @Column(name = "seq_room")
+
+    @JsonProperty("roomId")
+    @Column(name = "seq_room")
     private Long roomId;
-    private java.sql.Timestamp start_date;
-    private java.sql.Timestamp end_date;
+
+    @Column(name = "date_time_start")
+    private LocalDateTime startDate;
+
+    @Column(name = "date_time_end")
+    private LocalDateTime endDate;
 }

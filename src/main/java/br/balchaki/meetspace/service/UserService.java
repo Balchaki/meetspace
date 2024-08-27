@@ -2,12 +2,14 @@ package br.balchaki.meetspace.service;
 
 import br.balchaki.meetspace.domain.User.User;
 import br.balchaki.meetspace.domain.User.UserRepository;
-import br.balchaki.meetspace.dto.UserResponseDTO;
+import br.balchaki.meetspace.dto.SuccessMessageDTO;
+import br.balchaki.meetspace.dto.UserDTO;
 import br.balchaki.meetspace.security.JwtUtil;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -15,6 +17,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -28,10 +31,29 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final Set<String> invalidatedTokens = ConcurrentHashMap.newKeySet();
 
+
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
+    }
+
+    @Transactional
+    public SuccessMessageDTO updateExistingUserPassword(String oldPassword, String newPassword) {
+        User user = getCurrentUser();
+
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            return new SuccessMessageDTO(false, "Senha antiga incorreta");
+        }
+
+        if (oldPassword.equals(newPassword)) {
+            return new SuccessMessageDTO(false, "A nova senha não pode ser igual à senha antiga");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        return new SuccessMessageDTO(true, "Senha atualizada com sucesso");
     }
 
     public User registerNewUser(User user) {
@@ -39,12 +61,6 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public void updateExistingUserPassword(String email, String newPassword) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        user.setPassword(passwordEncoder.encode(newPassword));
-        userRepository.save(user);
-    }
 
     public User findByEmail(String email) {
         return userRepository.findByEmail(email)
@@ -76,13 +92,18 @@ public class UserService {
         }
     }
 
-    public Boolean getIsAdmin(String token){
-        return getAuthorities(token).contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
+    public Boolean getIsAdmin(Collection<? extends GrantedAuthority> authorities){
+        return authorities.contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
+    }
+
+    public Boolean getIsAdmin(String username){
+        User user = findByEmail(username);
+        return user.getIsAdmin();
     }
 
 
-    public Boolean getIsUser(String token){
-        return getAuthorities(token).contains(new SimpleGrantedAuthority("ROLE_USER"));
+    public Boolean getIsUser(Collection<? extends GrantedAuthority> authorities){
+        return authorities.contains(new SimpleGrantedAuthority("ROLE_USER"));
     }
 
     public Collection<? extends GrantedAuthority> getAuthorities(String token) {
@@ -103,5 +124,35 @@ public class UserService {
         } catch (Exception e) {
             throw new RuntimeException("Erro ao extrair autoridades do token: " + e.getMessage(), e);
         }
+    }
+
+    public User findByUserId(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + userId));
+    }
+
+    public User getCurrentUser() {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof UserDetails) {
+            UserDetails userDetails = (UserDetails) principal;
+            return findByEmail(userDetails.getUsername());
+        } else {
+            return null;
+        }
+    }
+
+    public Boolean updateExistingUser(UserDTO dto) {
+        User user = getCurrentUser();
+        if (Objects.nonNull(dto.getName())) {
+            user.setName(dto.getName());
+        }
+        if (Objects.nonNull(dto.getEmail())) {
+            user.setEmail(dto.getEmail());
+        }
+        user = userRepository.save(user);
+        if(user.getEmail().equals(dto.getEmail()) && user.getName().equals(dto.getName())){
+            return true;
+        }
+        return false;
     }
 }
