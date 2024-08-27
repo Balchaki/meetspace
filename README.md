@@ -7,8 +7,8 @@ Este sistema permite que os usuários reservem salas de reunião em um escritór
 ## Requisitos
 
 - Java 17 ou superior
-- PostgreSQL 16 ou superior
-- Node.js 14 ou superior
+- PostgreSQL
+- Node.js
 - Vue3
 
 ## Instalação
