@@ -9,7 +9,7 @@ Este sistema permite que os usuários reservem salas de reunião em um escritór
 - Java 17 ou superior
 - PostgreSQL 16 ou superior
 - Node.js 14 ou superior
-- React 17 ou superior
+- Vue3
 
 ## Instalação
 
@@ -36,7 +36,7 @@ Este sistema permite que os usuários reservem salas de reunião em um escritór
 
 ## Uso
 
-1. Acesse o sistema através do navegador em `http://localhost:3000`
+1. Acesse o sistema através do navegador em `http://localhost:5173`
 2. Faça login com suas credenciais
 3. Na página principal, você verá a lista de salas disponíveis
 4. Clique em "Reservar" para fazer uma reserva
