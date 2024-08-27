@@ -1,7 +1,6 @@
 package br.balchaki.meetspace.controllers;
 
 import br.balchaki.meetspace.dto.AuthenticationRequestDTO;
-import br.balchaki.meetspace.dto.AuthenticationResponseDTO;
 import br.balchaki.meetspace.dto.RegisterRequestDTO;
 import br.balchaki.meetspace.dto.LoginResponseDTO;
 import br.balchaki.meetspace.exception.UserAlreadyExistsException;
